@@ -21,7 +21,6 @@ def shiftneighbour(my,mx,c):
 mx = [-1,0,1,1,1,0,-1,-1]
 my = [1,1,1,0,-1,-1,-1,0]
 
-
 # Read binary image
 #imgraw = np.memmap("img.raw",shape=(128,128),dtype=np.uint8,mode='r')
 imgraw = sm.imread("sample/sample.png",flatten=True)
@@ -140,7 +139,7 @@ for (points,theta) in consegments:
     for (y0,x0,r) in points:
         imgcon[y0,x0] = [50,200,200]
 
-SCORE_THRESHOLD = 0.7
+SCORE_THRESHOLD = 0.5
 
 # Match the consegments for possible cross-cut
 for i in range(len(consegments)):
@@ -150,7 +149,7 @@ for i in range(len(consegments)):
 
         # Calculate the angle score
         ascore = np.abs(theta1+theta2)/(2.*np.pi)
-        scoremin = SCORE_THRESHOLD
+        minscore = SCORE_THRESHOLD
 
         for y1,x1,d1 in conseg1:
             for y2,x2,d2 in conseg2:
@@ -159,14 +158,13 @@ for i in range(len(consegments)):
                 lscore = r/(r+d1+d2)
                 score = (ascore+lscore)/2.
                 # Find point with lowest score
-                if score < scoremin:
-                    scoremin = score
+                if score < minscore:
+                    minscore = score
                     p1,p2 = (y1,x1),(y2,x2)
                     #print p1,p2,ascore,score
         
-        # Todo: if score is enough
-        if score < SCORE_THRESHOLD:
-            print "Score",score
+        if minscore < SCORE_THRESHOLD:
+            print "Score",minscore
             # Color em
             rcolor,gcolor,bcolor = random.randint(50,150),random.randint(50,150),random.randint(50,150)
             imgcon[p1[0],p1[1]] = [rcolor,gcolor,bcolor] 
@@ -175,6 +173,6 @@ for i in range(len(consegments)):
             # Draw the cutting line
             line = cutlinear.draw_line(p1,p2)
             for p in line:
-                imgcon[p[1],p[0]] = [200*score,0,200*score]
+                imgcon[p[0],p[1]] = [200*score,0,200*score]
         
 sm.imsave("imgcon.png",imgcon)

@@ -42,7 +42,7 @@ def draw_line(p1, p2):
     y = y1
     points = []
     for x in range(x1, x2 + 1):
-        coord = (y, x) if is_steep else (x, y)
+        coord = (x, y) if is_steep else (y, x)
         points.append(coord)
         error -= abs(dy)
         if error < 0:
