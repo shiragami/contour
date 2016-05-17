@@ -16,7 +16,42 @@ DEPTH_THRESHOLD = 4.0
 SCORE_THRESHOLD = 0.6
 imgcon = np.zeros([100,100,3])
 
-def splitconcave(contour):
+count = 0
+
+def drawcontour(contour,c):
+    imgc = np.zeros([100,100,3])
+    fname = "imgcontour%s.png" % "{0:02d}".format(c)
+
+    for y,x in contour:
+        imgc[y,x] = [200,100,200]
+
+    sm.imsave(fname,imgc)
+
+    return
+
+# Split contour from a given 2 points 
+def splitcontour(contour,p1,p2):
+    # Draw the line
+    line = cutlinear.draw_line(p1,p2)
+
+    # Find index of point in contour
+    s1,s2 = contour.index(p1),contour.index(p2)
+
+    # Split and stitch
+
+    if s2 > s1:
+        c1 = contour[s1+1:s2] + line[::-1]
+        c2 = contour[:s1] + line[:] + contour[s2+1:]
+    else:
+        c1 = contour[s2+1:s1] + line[:]
+        c2 = contour[:s2] + line[::-1] + contour[s1+1:]
+
+    return c1,c2
+
+
+def splitconcave(contour,lcontour=[]):
+    global count
+
     # Find the convex hull that enclosed the contour
     hull = ConvexHull(contour)
     hv = sorted(hull.vertices) # Fuck this bug
@@ -27,7 +62,8 @@ def splitconcave(contour):
     consegments = []
 
     for segment in segments:
-        # Assign end-points
+        #print len(segment)
+        # Assign end-points. x2 must > x1
         if segment[0][0] < segment[-1][0]:
             (y1,x1),(y2,x2) = segment[0],segment[-1]
         else:
@@ -58,7 +94,10 @@ def splitconcave(contour):
 
         if flag:
             # Calculate the angle 
-            theta = np.arctan2(dy/dd,dx/dd)
+            theta = np.arctan2(dy,dx)
+            theta = -theta if dy/dx*(x0-x1) + y1 > y0 else theta
+#            print y0,x0
+#            print "angle",theta
             consegments.append((points,theta))
         
     # Color em
@@ -66,7 +105,11 @@ def splitconcave(contour):
         for (y0,x0,r) in points:
             imgcon[y0,x0] = [50,200,200]
 
-    # Match the consegments for possible cross-cut
+    minscore = SCORE_THRESHOLD
+
+    # Todo:theta is wrong. Check muki
+
+    # Match the consegments for possible cut
     for i in range(len(consegments)):
         for j in range(i+1,len(consegments)):
             conseg1,theta1 = consegments[i]
@@ -74,8 +117,7 @@ def splitconcave(contour):
 
             # Calculate the angle score
             ascore = np.abs(theta1+theta2)/(2.*np.pi)
-            minscore = SCORE_THRESHOLD
-
+            #print theta1,theta2
             for y1,x1,d1 in conseg1:
                 for y2,x2,d2 in conseg2:
                     dy,dx = float(y2-y1),float(x2-x1)
@@ -86,20 +128,37 @@ def splitconcave(contour):
                     if score < minscore:
                         minscore = score
                         p1,p2 = (y1,x1),(y2,x2)
-                        #print p1,p2,ascore,score
-            
-            if minscore < SCORE_THRESHOLD:
-                print "Score",minscore
-                # Color em
-                rcolor,gcolor,bcolor = random.randint(50,150),random.randint(50,150),random.randint(50,150)
-                imgcon[p1[0],p1[1]] = [rcolor,gcolor,bcolor] 
-                imgcon[p2[0],p2[1]] = [rcolor,gcolor,bcolor]       
+                       #print p1,p2,ascore,score
 
-                # Draw the cutting line
-                line = cutlinear.draw_line(p1,p2)
-                for p in line:
-                    imgcon[p[0],p[1]] = [200*score,0,200*score]
+    if minscore < SCORE_THRESHOLD:
+        print "Score",minscore
+        # Color em
+        rcolor,gcolor,bcolor = random.randint(50,150),random.randint(50,150),random.randint(50,150)
+        imgcon[p1[0],p1[1]] = [rcolor,gcolor,bcolor] 
+        imgcon[p2[0],p2[1]] = [rcolor,gcolor,bcolor]       
 
+        # Draw the cutting line
+        line = cutlinear.draw_line(p1,p2)
+        for p in line:
+            imgcon[p[0],p[1]] = [200*score,0,200*score]
+
+
+        # Split contour into two
+        c1,c2 = splitcontour(contour,p1,p2)
+
+        drawcontour(c1,count)
+        count+=1    
+        drawcontour(c2,count)
+        count+=1    
+
+        # Recursive call
+        splitconcave(c1,lcontour)
+        splitconcave(c2,lcontour)
+    else:
+        lcontour.append(contour)
+        return
+    
+    return lcontour    
 
 # Main function starts here
 
@@ -112,7 +171,10 @@ contour = Moore.contour_trace(imgbin)
 for py,px in contour:
     imgcon[py,px] = [200,200,200]
 
-splitconcave(contour)
+contours = splitconcave(contour)
+
+#for c,contour in enumerate(contours):
+#    drawcontour(contour,c)
 
 # Color em
 #for segment in segments:
