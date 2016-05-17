@@ -23,7 +23,7 @@ my = [1,1,1,0,-1,-1,-1,0]
 
 # Read binary image
 #imgraw = np.memmap("img.raw",shape=(128,128),dtype=np.uint8,mode='r')
-imgraw = sm.imread("sample/sample.png",flatten=True)
+imgraw = sm.imread("sample/sample3.png",flatten=True)
 imgraw = imgraw < 10
 sm.imsave("binary.png",imgraw)
 
@@ -90,17 +90,26 @@ while(step<maxstep and not stop):
 
 # Find the convex hull that enclosed the contour
 hull = ConvexHull(contour)
-hv = hull.vertices
-
-# Shift contour so that contour[0] matches vertices[0]
-contour = contour[hv[0]:] + contour[:hv[0]] # Shift contour
+hv = sorted(hull.vertices) # Fuck this bug
 
 # Create the vertex pairs
-segments = [contour[hv[v]-hv[0]:hv[v+1]-hv[0]+1] for v in range(len(hv)-1)] + [contour[hv[-1]-hv[0]:]+[(contour[0])]]
+segments = [contour[hv[v]:hv[v+1]+1] for v in range(len(hv)-1)] + [contour[hv[-1]:] + contour[:hv[0]+1]]
+
+# Color em
+#for segment in segments:
+#    rcolor,gcolor,bcolor = random.randint(50,150),random.randint(50,150),random.randint(50,150)
+#    for y0,x0 in segment[1:-1]:
+#        imgcon[y0,x0] = [rcolor,gcolor,bcolor]
+
+#for v in hv:
+#    y0,x0 = contour[v]
+#sm.imsave("imgcon.png",imgcon)
 
 consegments = []
+
 for segment in segments:
     # Assign end-points
+
     if segment[0][0] < segment[-1][0]:
         (y1,x1),(y2,x2) = segment[0],segment[-1]
     else:
@@ -139,7 +148,7 @@ for (points,theta) in consegments:
     for (y0,x0,r) in points:
         imgcon[y0,x0] = [50,200,200]
 
-SCORE_THRESHOLD = 0.5
+SCORE_THRESHOLD = 0.6
 
 # Match the consegments for possible cross-cut
 for i in range(len(consegments)):
