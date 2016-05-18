@@ -146,10 +146,10 @@ def splitconcave(contour,lcontour=[]):
         # Split contour into two
         c1,c2 = splitcontour(contour,p1,p2)
 
-        drawcontour(c1,count)
-        count+=1    
-        drawcontour(c2,count)
-        count+=1    
+        #drawcontour(c1,count)
+        #count+=1    
+        #drawcontour(c2,count)
+        #count+=1    
 
         # Recursive call
         splitconcave(c1,lcontour)
@@ -164,7 +164,7 @@ def splitconcave(contour,lcontour=[]):
 
 
 # Read image
-imgbin = sm.imread("sample/sample3.png",flatten=True) < 10
+imgbin = sm.imread("sample/sample.png",flatten=True) < 10
 sm.imsave("binary.png",imgbin)
 
 contour = Moore.contour_trace(imgbin)
@@ -173,8 +173,8 @@ for py,px in contour:
 
 contours = splitconcave(contour)
 
-#for c,contour in enumerate(contours):
-#    drawcontour(contour,c)
+for c,contour in enumerate(contours):
+    drawcontour(contour,c)
 
 # Color em
 #for segment in segments:
