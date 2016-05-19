@@ -56,6 +56,7 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
                 //printf("%d %d step=%d\n",py,px,step);
                 // Todo:Append contour 
                 //contour.append([px,py])        
+
                 contourx[step] = px;
                 contoury[step] = py;
 
@@ -68,6 +69,9 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
                 int k,tmp[8];
                 for(k=0;k<8;k++) tmp[k] = my[(k+c+5)%8];
                 for(k=0;k<8;k++) my[k]  = tmp[k];
+
+                //for(k=0;k<8;k++) tmp[k] = mx[(k+c+5)%8];
+                //for(k=0;k<8;k++) mx[k]  = tmp[k];
                 for(k=0;k<8;k++) mx[k]  = tmp[(k+6)%8];
 
                 step++;
@@ -78,13 +82,13 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
         if(fail) break; // This for breaking early do error
     }
     if(finish && step>MINSTEP){
+        int i;
         /* Todo */
         //return True,imgcon,contour
         //sm.imsave("imgcon.png",imgcon)
-        int i;
 
-        for(i=0;i<=step;i++){
-            printf("%d %d\n",contourx[i],contoury[i]);
+        for(i=0;i<step;i++){
+            printf("%d %d,",contourx[i],contoury[i]);
         }
         printf("\n");
 
@@ -101,7 +105,6 @@ int main(void){
 
     imgH = 512;
     imgW = 512;
-
 
     /* Create buffer for input image uint8 */
     if (img = (unsigned char **) malloc(sizeof(unsigned char *)*imgH)){
