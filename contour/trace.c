@@ -6,12 +6,16 @@
 
 unsigned char **img;
 int imgH,imgW;
+int count = 0;
 
 void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 
     /* Create clockwise neighbourhood, starts with north-west */
     int mx[8] = {-1,0,1,1,1,0,-1,-1};
     int my[8] = {1,1,1,0,-1,-1,-1,0};
+
+    int contourx[MAXSTEP];
+    int contoury[MAXSTEP];
 
     //imgcon = np.zeros([imgsize,imgsize,3])
     //contour = [[sx,sy]]
@@ -23,7 +27,7 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 
     /* Finishing criterion */
     int finish = 0;
-    int step = 1;
+    int step = 0;
     int fail;
 
     while(step<MAXSTEP && !finish){
@@ -52,8 +56,11 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
                 //printf("%d %d step=%d\n",py,px,step);
                 // Todo:Append contour 
                 //contour.append([px,py])        
+                contourx[step] = px;
+                contoury[step] = py;
 
                 /* If cx & cy returns to seed with same direction as first step, flag finish */
+                //if(cx == sx && cy == sy) finish = 1;
                 if(cx == sx && cy == sy && mx[c] == -1 && my[c] == 1) finish = 1;
 
                 //my,mx = shiftneighbour(my,mx,c)
@@ -74,9 +81,17 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
         /* Todo */
         //return True,imgcon,contour
         //sm.imsave("imgcon.png",imgcon)
+        int i;
+
+        for(i=0;i<=step;i++){
+            printf("%d %d\n",contourx[i],contoury[i]);
+        }
+        printf("\n");
+
+        count++;
         return;
     }
-
+    
     return;
 }
 
@@ -170,7 +185,7 @@ int main(void){
                 /* Start tracing */
                 //Todo: 
                 //flag,imgcon,contour = MooreTrace(img,index_max_gradient,v,min_obj_intensity,max_obj_intensity)
-                MooreTrace(index_max_gradient,j,min_obj_intensity,max_obj_intensity);
+                MooreTrace(index_max_gradient,i,min_obj_intensity-0,max_obj_intensity+0);
 
                 /* Mark max local gradient */
                 //img_grad[v,index_max_gradient] = [0,255,0]
@@ -207,6 +222,8 @@ int main(void){
         free(img[i]);
     }
     free(img);
+
+    //printf("Contour found:%d\n",count);
 
     return;
 }
