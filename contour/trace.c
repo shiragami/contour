@@ -27,8 +27,11 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 
     /* Finishing criterion */
     int finish = 0;
-    int step = 0;
+    int step = 1;
     int fail;
+
+    contourx[0] = sx;
+    contoury[0] = sy;
 
     while(step<MAXSTEP && !finish){
         int c;
