@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Snippet for contour tracing based on Moore-Neighbor algorithm
+# Snippet for contour tracing based on Moore-Neighbor algorithm, with Jacob's stopping criterion
 # http://www.imageprocessingplace.com/downloads_V3/root_downloads/tutorials/contour_tracing_Abeer_George_Ghuneim/moore.html
 # Input binary image. Background is False.
 
