@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #define OFFSET 10
 #define MAXSTEP 500
-#define MINSTEP 30
+#define MINSTEP 50
 
 unsigned char **img;
 int imgH,imgW;

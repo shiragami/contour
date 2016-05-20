@@ -81,7 +81,7 @@ for c,con in enumerate(contour):
         py,px = int(py),int(px)
         window = imgsobel[py-1:py+2,px-1:px+2]
         my,mx = np.unravel_index(np.argmax(window),window.shape)
-        if my==0 and mx==0:
+        if my==1 and mx==1:
             gfit +=1.
     gfit = gfit/float(len(con))
 
