@@ -75,8 +75,17 @@ for c,con in enumerate(contour):
     for px,py in con:
         gsum = gsum + imgsobel[int(py),int(px)]
     gmean = gsum/float(len(con))
-    score[c][1] = gmean    
 
+    gfit = 0.
+    for px,py in con:
+        py,px = int(py),int(px)
+        window = imgsobel[py-1:py+2,px-1:px+2]
+        my,mx = np.unravel_index(np.argmax(window),window.shape)
+        if my==0 and mx==0:
+            gfit +=1.
+    gfit = gfit/float(len(con))
+
+    score[c][1] = gfit*gmean
 
 # Sort score
 score = sorted(score,key=lambda x:x[1],reverse=True)
