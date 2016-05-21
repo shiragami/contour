@@ -7,6 +7,7 @@
 unsigned char **img;
 int imgH,imgW;
 int count = 0;
+FILE *fcontour;
 
 void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 
@@ -91,9 +92,12 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
         //sm.imsave("imgcon.png",imgcon)
 
         for(i=0;i<step;i++){
-            printf("%d %d,",contourx[i],contoury[i]);
+            //printf("%d %d,",contourx[i],contoury[i]);
+            fprintf(fcontour,"%d %d,",contourx[i],contoury[i]);
+            //fprintf(fcontour,"Test\n");
         }
-        printf("\n");
+        fprintf(fcontour,"\n");
+        //printf("\n");
 
         count++;
         return;
@@ -102,12 +106,19 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
     return;
 }
 
-int main(void){
-
+int main(int argc, char *argv[]){
     int i,j;
 
-    imgH = 512;
-    imgW = 512;
+    if(argc!=4){
+        printf("trace <imgfile> <imgheight> <imgwidth>\n");
+        exit(1);
+    }
+
+    //printf("imgfile:%s\n",argv[1]);
+
+
+    imgH = atoi(argv[2]);
+    imgW = atoi(argv[3]);
 
     /* Create buffer for input image uint8 */
     if (img = (unsigned char **) malloc(sizeof(unsigned char *)*imgH)){
@@ -118,14 +129,26 @@ int main(void){
 
     /* Read image*/
     /* Todo: Pass the buffer through Python */
-    FILE *fimg;
-    fimg = fopen("tile1.raw","rb");
-    for(i=0;i<imgH;i++){
-        for(j=0;j<imgW;j++){
-            img[i][j] = fgetc(fimg);
-            //printf("%d\n",img[i][j]);
+    FILE *fimg = fopen(argv[1],"rb");
+    if(fimg == NULL){
+        printf("Image not found\n");
+        exit(1);
+    }else{
+        for(i=0;i<imgH;i++){
+            for(j=0;j<imgW;j++){
+                img[i][j] = fgetc(fimg);
+                //printf("%d\n",img[i][j]);
+            }
         }
     }
+    fclose(fimg);
+
+    /* Open file for output */
+    fcontour = fopen("contour.dat","w");
+    if(fcontour == NULL){
+        printf("Error opening output file\n");
+    }
+
 
 
     /* Search for local maxima */
@@ -231,5 +254,6 @@ int main(void){
 
     //printf("Contour found:%d\n",count);
 
+    fclose(fcontour);
     return;
 }

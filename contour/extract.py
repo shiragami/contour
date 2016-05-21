@@ -7,8 +7,21 @@ import skimage.filters
 import random
 import sys
 
-imgcontour = np.zeros([512,512,3])
-imgmark = np.zeros([512,512],dtype=np.bool)
+# Read image
+img = sm.imread("tile2.png",flatten=True)
+size = img.shape
+
+# Write image as uint8
+x = np.array(img,'uint8')
+fo = open("img.raw",'wb')
+x.tofile(fo)
+fo.close()
+
+# Normalize image for sobel filter
+img = img/255.
+
+imgcontour = np.zeros([size[0],size[1],3])
+imgmark = np.zeros([size[0],size[1]],dtype=np.bool)
 
 def drawContour(contour):
     rcolor = random.randint(100,200)
@@ -60,7 +73,6 @@ for d in data:
 
 
 # Evaluate contour
-img = sm.imread("tile1.jpg",flatten=True)/255.
 
 
 # Apply sobel filter to image
@@ -98,5 +110,5 @@ for s in score[:]:
 
 #print imgmark
 
-sm.imsave("imgsobel.png",imgsobel)
+#sm.imsave("imgsobel.png",imgsobel)
 sm.imsave("imgcontour.png",imgcontour)
