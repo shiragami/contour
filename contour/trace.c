@@ -89,7 +89,7 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
                 break;
             }
         }
-        if(fail) break; // This for breaking early do error
+        if(fail) break; // This for breaking early due to error
     }
     if(finish && step>MINSTEP){
         int i;
@@ -99,7 +99,7 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 
         for(i=0;i<step;i++){
             //printf("%d %d,",contourx[i],contoury[i]);
-            fprintf(fcontour,"%d %d,",contourx[i],contoury[i]);
+            fprintf(fcontour,"%d %d,",contoury[i],contourx[i]);
             //fprintf(fcontour,"Test\n");
         }
         fprintf(fcontour,"\n");
