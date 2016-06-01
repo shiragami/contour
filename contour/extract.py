@@ -6,6 +6,8 @@ import scipy.misc as sm
 import skimage.filters
 import random
 import sys
+import subprocess
+from scipy.ndimage.morphology import binary_fill_holes
 
 # Read image
 img = sm.imread("tile2.png",flatten=True)
@@ -22,6 +24,11 @@ img = img/255.
 
 imgcontour = np.zeros([size[0],size[1],3])
 imgmark = np.zeros([size[0],size[1]],dtype=np.bool)
+
+
+# Run tracing program
+#cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
+#p = subprocess.call(cmd,stdout=subprocess.PIPE)
 
 def drawContour(contour):
     rcolor = random.randint(100,200)
@@ -41,39 +48,67 @@ def drawContour(contour):
 
 # Function to check whether point is already used or not
 def contourNotOverlap(contour):
+    global imgmark
+    imgtmp = np.zeros([size[0],size[1]],dtype=np.bool)
     for px,py in contour:
         # Break if a single point is already used
         if imgmark[int(py),int(px)]:
             return False
+        imgtmp[int(py),int(px)] = True
+
+    # Fill holes
+#    imgtmp = binary_fill_holes(imgtmp)
+#    overlap = imgtmp & imgmark
+
+#    imgmark = imgmark + imgtmp
+
+#    if sum(sum(overlap)) != 0:
+#        print "Overlap"
+#        return False
+#    else:
+#        imgmark = imgmark + imgtmp
+
     return True
 
 contour = []
-data = [l.strip() for l in open("data.dat")]
-#spaces = [i for i in range(len(data)) if data[i]=='']
-
-#contour.append(data[:spaces[0]+1])
-#for s in range(len(spaces)-1):
-#    contour.append(data[spaces[s]+1:spaces[s+1]])
-#contour.append(data[spaces[-1]:])
-
-#print contour
 
 #print "Total:",len(contour)
 
 
 # Load contour
-data = [l.strip() for l in open("data.dat")]
+data = [l.strip() for l in open("contour.dat")]
 for d in data:
     con = d.split(',')[:-1]
     con = [x.split() for x in con]
     contour.append(con)
 
 
-#for c in contour[:10]:
-
 
 # Evaluate contour
 
+for con in contour[:]:
+    l = len(con)
+    px = np.array([int(c[0]) for c in con])
+    py = np.array([int(c[1]) for c in con])
+    xmin,xmax = min(px),max(px)
+    ymin,ymax = min(py),max(py)
+    
+    py = py - ymin
+    px = px - xmin
+
+    print xmin,xmax,ymin,ymax
+    imgbin = np.zeros([ymax-ymin+1,xmax-xmin+1],dtype=np.bool)
+
+    for p in range(len(con)):
+        imgbin[py[p],px[p]] = True
+
+    imgbin = binary_fill_holes(imgbin)
+    sm.imsave("imgbin.png",imgbin)
+
+    imgcrop = img[ymin:ymax+1,xmin:xmax+1]
+    sm.imsave("imgcrop.png",imgcrop)
+
+sys.exit()
 
 # Apply sobel filter to image
 imgsobel = skimage.filters.sobel(img)
@@ -102,13 +137,17 @@ for c,con in enumerate(contour):
 # Sort score
 score = sorted(score,key=lambda x:x[1],reverse=True)
 
+
 # Mark contour
 for s in score[:]:
-    if contourNotOverlap(contour[s[0]]):
+    flag = contourNotOverlap(contour[s[0]])
+    if flag:
         drawContour(contour[s[0]])
+        #sm.imsave("imgfill.png",imgfill)
 
-
+print len(contour)
 #print imgmark
 
 #sm.imsave("imgsobel.png",imgsobel)
 sm.imsave("imgcontour.png",imgcontour)
+sm.imsave("imgmark.png",imgmark)

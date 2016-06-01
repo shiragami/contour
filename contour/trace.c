@@ -2,7 +2,13 @@
 #include<stdlib.h>
 #define OFFSET 10
 #define MAXSTEP 500
-#define MINSTEP 50
+#define MINSTEP 100
+/*
+  Program to trace contours from 8bit grayscale image
+  Input: 8bit image
+  Output: contour.dat
+*/
+
 
 unsigned char **img;
 int imgH,imgW;
@@ -119,6 +125,7 @@ int main(int argc, char *argv[]){
 
     imgH = atoi(argv[2]);
     imgW = atoi(argv[3]);
+    printf("Imgsize %d %d\n",imgH,imgW);
 
     /* Create buffer for input image uint8 */
     if (img = (unsigned char **) malloc(sizeof(unsigned char *)*imgH)){
