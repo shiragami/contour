@@ -50,7 +50,7 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 
             /* Break if reach border */
             /* Todo: Can I just use return 0 ? */
-            if(cx < 0 || cx > imgW-1 || cy < 0 || cy > imgH-1) break;
+            if(cx < OFFSET || cx > imgW-1-OFFSET || cy < OFFSET || cy > imgH-1-OFFSET) break;
             
             /* Image thresholding */
             if(img[cy][cx] < thres_min || img[cy][cx] > thres_max){

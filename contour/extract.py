@@ -10,9 +10,9 @@ import subprocess
 from scipy.ndimage.morphology import binary_fill_holes
 
 # Read image
-img = sm.imread("tile2.png",flatten=True)
-#img = sm.imread("tile2.png")
-#img = img[:,:,0]
+#img = sm.imread("tile2_blur.png",flatten=True)
+img = sm.imread("tile2_blur.png")
+img = img[:,:,0]
 size = img.shape
 
 # Todo: Pass the image buffer through Python wrapper
@@ -29,8 +29,8 @@ imgcontour = np.zeros([size[0],size[1],3])
 imgmark = np.zeros([size[0],size[1]],dtype=np.bool)
 
 # Run tracing program
-#cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
-#p = subprocess.call(cmd,stdout=subprocess.PIPE)
+cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
+p = subprocess.call(cmd,stdout=subprocess.PIPE)
 
 
 def drawContour(contour):
