@@ -19,13 +19,7 @@ size = img.shape
 imgcontour = np.zeros([size[0],size[1],3])
 imgmark = np.zeros([size[0],size[1]],dtype=np.bool)
 
-# Run contour tracing
-#contours = contour.trace(img)
-contours = contour.load_contours("contour.dat")
-
-# Normalize image for sobel filter
-img = img/255.
-
+# Function to draw contour, marked drawn contour as used
 def drawContour(contour):
     rcolor = random.randint(100,200)
     gcolor = random.randint(100,200)
@@ -53,64 +47,40 @@ def contourNotOverlap(contour):
         imgtmp[py,px] = True
     return True
 
-
-
-
-# Load contour
-"""
-data = [l.strip() for l in open("contour.dat")]
-for d in data:
-    con = d.split(',')[:-1]
-    con = [map(int,x.split()) for x in con]
-    contour.append(con)
-    #c = Contour(con)
-    #c.fill_holes()
-    #contours.append(c)
-print "Total:",len(contour)
-"""
-
-for contour in contours:
-    print contour.x
-
-
-sys.exit()
-
+# Run contour tracing
+#contours = contour.trace(img)
+contours = contour.load_contours("contour.dat")
 # Contour evaluation
 
 # Apply sobel filter to image
-imgsobel = skimage.filters.sobel(img)
+imgsobel = skimage.filters.sobel(img/255.)
 
-# Calculate mean gradient for each contour
-score = [[i,0] for i in range(len(contour))]
-
-for c,con in enumerate(contour):
+for contour in contours:
+    # Calculate mean gradient
     gsum = 0.
-    for py,px in con:
+    for py,px in contour.contour:
         gsum = gsum + imgsobel[py,px]
-    gmean = gsum/float(len(con))
+    gmean = gsum/float(contour.length)
 
+    # Calculate gradient fitting score
     gfit = 0.
-    for py,px in con:
+    for py,px in contour.contour:
         window = imgsobel[py-1:py+2,px-1:px+2]
         mx,my = np.unravel_index(np.argmax(window),window.shape) # Do not change this line
         if my==1 and mx==1:
             gfit +=1.
-    gfit = gfit/float(len(con))
+    gfit = gfit/float(contour.length)
+    contour.score = gfit*gmean
 
-    score[c][1] = gfit*gmean
-
-# Sort score
-score = sorted(score,key=lambda x:x[1],reverse=True)
-
-print len(contour)
+# Sort contours based on score
+contours = sorted(contours,key=lambda x:x.score,reverse=True)
 
 # Mark contour
 f = open("contour_nonoverlap.dat",'w')
-for s in score:
-    flag = contourNotOverlap(contour[s[0]])
-    if flag:
-        drawContour(contour[s[0]])
-        for py,px in contour[s[0]]:
+for contour in contours:
+    if contourNotOverlap(contour.contour):
+        drawContour(contour.contour)
+        for py,px in contour.contour:
             f.write("%s %s," % (py,px))
         f.write("\n")
 f.close()

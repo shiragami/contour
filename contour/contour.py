@@ -7,6 +7,7 @@ from scipy.ndimage.filters import gaussian_filter
 class Contour:
     def __init__(self,contour):
         self.contour = contour
+        self.length  = len(contour)
 
         # Set the contour location and shape
         px = [p[1] for p in contour]
