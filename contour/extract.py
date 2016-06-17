@@ -9,7 +9,7 @@ import sys
 import subprocess
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.filters import gaussian_filter
-
+import contour
 
 # Read image
 #img = sm.imread("tile2.png",flatten=True)
@@ -31,8 +31,8 @@ imgcontour = np.zeros([size[0],size[1],3])
 imgmark = np.zeros([size[0],size[1]],dtype=np.bool)
 
 # Run tracing program
-cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
-p = subprocess.call(cmd,stdout=subprocess.PIPE)
+#cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
+#p = subprocess.call(cmd,stdout=subprocess.PIPE)
 
 
 def drawContour(contour):
@@ -73,6 +73,9 @@ for d in data:
     con = d.split(',')[:-1]
     con = [map(int,x.split()) for x in con]
     contour.append(con)
+    #c = Contour(con)
+    #c.fill_holes()
+    #contours.append(c)
 
 
 # Contour evaluation

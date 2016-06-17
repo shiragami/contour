@@ -18,17 +18,20 @@ class Contour:
         self.height = self.y2 - self.y + 1
         self.width  = self.x2 - self.x + 1
 
-        # Create the binary image of enclosed contour
+        self.img = None
+        self.area = 0
+
+        self.child = []
+        self.valid = True
+    
+    # Create the binary image of enclosed contour
+    def fill_holes(self):
         self.img = np.zeros([self.height,self.width],dtype=np.bool)
         for py,px in self.contour:
             self.img[py-self.y,px-self.x] = True
         self.img = binary_fill_holes(self.img)
-
         self.area = np.sum(self.img)
-
-        self.child = []
-        self.valid = True
-
+        
 # Check if bounding box of contour1 is enclosed by bounding box of contour2
 def check_box_enclosed(c1,c2):
     if c1.x > c2.x and c1.x2 < c2.x2 and c1.y > c2.y and c1.y2 < c2.y2:
@@ -43,6 +46,7 @@ for d in data:
     con = d.split(',')[:-1]
     con = [map(int,x.split()) for x in con]
     c = Contour(con)
+    c.fill_holes()
     contours.append(c)
 
 # Sort contour by area
