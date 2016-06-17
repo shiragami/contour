@@ -1,14 +1,16 @@
+/*
+    Program to trace contours from 8bit grayscale image
+    Input: 8bit image
+    Output: contour.dat
+    OFFSET: Pixel offset from image boundary
+    MAXSTEP: Maximum contour pixels
+    MINTEP: Mininum contour pixels
+*/
 #include<stdio.h>
 #include<stdlib.h>
 #define OFFSET 10
 #define MAXSTEP 500
 #define MINSTEP 100
-/*
-  Program to trace contours from 8bit grayscale image
-  Input: 8bit image
-  Output: contour.dat
-*/
-
 
 unsigned char **img;
 int imgH,imgW;
@@ -23,10 +25,6 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 
     int contourx[MAXSTEP];
     int contoury[MAXSTEP];
-
-    //imgcon = np.zeros([imgsize,imgsize,3])
-    //contour = [[sx,sy]]
-    //imgcon[sy,sx] = [0,255,0]
 
     /* Init starting point */
     int py = sy; int px = sx;
@@ -49,39 +47,26 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
             int cy = py + my[c];
 
             /* Break if reach border */
-            /* Todo: Can I just use return 0 ? */
             if(cx < OFFSET || cx > imgW-1-OFFSET || cy < OFFSET || cy > imgH-1-OFFSET) break;
             
             /* Image thresholding */
             if(img[cy][cx] < thres_min || img[cy][cx] > thres_max){
                 /* Background: Advance */
                 wy = cy; wx = cx;
-                //imgcon[cy,cx] = [0,0,255]
             }else{
                 /* Foreground: Backtrack */
-                //imgcon[py,px] = [0,255,0]
-                //imgcon[cy,cx] = [0,255,0]
                 py = wy; px = wx;
-                //print py,px,step
-                //printf("%d %d step=%d\n",py,px,step);
-                // Todo:Append contour 
-                //contour.append([px,py])        
 
                 contourx[step] = px;
                 contoury[step] = py;
 
                 /* If cx & cy returns to seed with same direction as first step, flag finish */
-                //if(cx == sx && cy == sy) finish = 1;
                 if(cx == sx && cy == sy && mx[c] == -1 && my[c] == 1) finish = 1;
 
-                //my,mx = shiftneighbour(my,mx,c)
                 /* Shift neighbour when backtrack */
                 int k,tmp[8];
                 for(k=0;k<8;k++) tmp[k] = my[(k+c+5)%8];
                 for(k=0;k<8;k++) my[k]  = tmp[k];
-
-                //for(k=0;k<8;k++) tmp[k] = mx[(k+c+5)%8];
-                //for(k=0;k<8;k++) mx[k]  = tmp[k];
                 for(k=0;k<8;k++) mx[k]  = tmp[(k+6)%8];
 
                 step++;
@@ -89,21 +74,17 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
                 break;
             }
         }
-        if(fail) break; // This for breaking early due to error
+        /* This for breaking early due to error */
+        if(fail) break;
     }
     if(finish && step>MINSTEP){
         int i;
-        /* Todo */
-        //return True,imgcon,contour
-        //sm.imsave("imgcon.png",imgcon)
 
+        /* Write contours to file */
         for(i=0;i<step;i++){
-            //printf("%d %d,",contourx[i],contoury[i]);
             fprintf(fcontour,"%d %d,",contoury[i],contourx[i]);
-            //fprintf(fcontour,"Test\n");
         }
         fprintf(fcontour,"\n");
-        //printf("\n");
 
         count++;
         return;
@@ -119,9 +100,6 @@ int main(int argc, char *argv[]){
         printf("trace <imgfile> <imgheight> <imgwidth>\n");
         exit(1);
     }
-
-    //printf("imgfile:%s\n",argv[1]);
-
 
     imgH = atoi(argv[2]);
     imgW = atoi(argv[3]);
@@ -155,8 +133,6 @@ int main(int argc, char *argv[]){
     if(fcontour == NULL){
         printf("Error opening output file\n");
     }
-
-
 
     /* Search for local maxima */
     for(i=OFFSET;i<imgH-OFFSET;i++){
@@ -209,33 +185,15 @@ int main(int argc, char *argv[]){
             int min_obj_intensity,max_obj_intensity;
             if ((increasing && next_intensity<intensity) || (!increasing && next_intensity>intensity)){
                 if(increasing){
-                    //print "up"
                     min_obj_intensity = intensity_max_grad;
                     max_obj_intensity = max_intensity;
                 }else{
-                    //print "down"
                     min_obj_intensity = min_intensity;
                     max_obj_intensity = intensity_max_grad;
                 }
 
                 /* Start tracing */
-                //Todo: 
-                //flag,imgcon,contour = MooreTrace(img,index_max_gradient,v,min_obj_intensity,max_obj_intensity)
                 MooreTrace(index_max_gradient,i,min_obj_intensity-0,max_obj_intensity+0);
-
-                /* Mark max local gradient */
-                //img_grad[v,index_max_gradient] = [0,255,0]
-
-                //Todo:
-                /*
-                if flag:
-                    print "Tracing succeed"
-                    fname =  "./contour/imgcon_" + "{0:04d}".format(ncontour) + ".png"
-                    sm.imsave(fname,imgcon)
-                    fname =  "./contour/cont_" + "{0:04d}".format(ncontour) + ".dat"
-                    np.savetxt(fname,contour,fmt="%d")
-                    ncontour = ncontour + 1
-                */
 
                 /* Reset variable */
                 min_intensity = intensity;
