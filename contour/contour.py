@@ -1,4 +1,9 @@
 #!/usr/bin/python
+import subprocess
+import numpy as np
+from scipy.ndimage.morphology import binary_fill_holes
+from scipy.ndimage.filters import gaussian_filter
+
 class Contour:
     def __init__(self,contour):
         self.contour = contour
@@ -27,3 +32,31 @@ class Contour:
             self.img[py-self.y,px-self.x] = True
         self.img = binary_fill_holes(self.img)
         self.area = np.sum(self.img)
+
+# Function to trace contour on given grayscale image
+def trace(img):
+    # Todo: Pass the image buffer through Python wrapper
+    # Write image as uint8
+    x = np.array(gaussian_filter(img,sigma=1.0),'uint8')
+    fo = open("img.raw",'wb')
+    x.tofile(fo)
+    fo.close()
+
+    size = img.shape
+
+    cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
+    p = subprocess.call(cmd,stdout=subprocess.PIPE)
+    return load_contours("contour.dat")
+
+# Function to load contour from dat file
+# Return a list of contour class
+def load_contours(filename):
+    contours = []
+    data = [l.strip() for l in open(filename)]
+    for d in data:
+        con = d.split(',')[:-1]
+        con = [map(int,x.split()) for x in con]
+        c = Contour(con)
+        contours.append(c)
+    return contours
+

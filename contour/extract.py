@@ -6,7 +6,6 @@ import scipy.misc as sm
 import skimage.filters
 import random
 import sys
-import subprocess
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.filters import gaussian_filter
 import contour
@@ -17,23 +16,15 @@ img = sm.imread("tile2.png")
 img = img[:,:,0]
 size = img.shape
 
-# Todo: Pass the image buffer through Python wrapper
-# Write image as uint8
-x = np.array(gaussian_filter(img,sigma=1.0),'uint8')
-fo = open("img.raw",'wb')
-x.tofile(fo)
-fo.close()
-
-# Normalize image for sobel filter
-img = img/255.
-
 imgcontour = np.zeros([size[0],size[1],3])
 imgmark = np.zeros([size[0],size[1]],dtype=np.bool)
 
-# Run tracing program
-#cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
-#p = subprocess.call(cmd,stdout=subprocess.PIPE)
+# Run contour tracing
+#contours = contour.trace(img)
+contours = contour.load_contours("contour.dat")
 
+# Normalize image for sobel filter
+img = img/255.
 
 def drawContour(contour):
     rcolor = random.randint(100,200)
@@ -62,12 +53,11 @@ def contourNotOverlap(contour):
         imgtmp[py,px] = True
     return True
 
-contour = []
 
-#print "Total:",len(contour)
 
 
 # Load contour
+"""
 data = [l.strip() for l in open("contour.dat")]
 for d in data:
     con = d.split(',')[:-1]
@@ -76,7 +66,14 @@ for d in data:
     #c = Contour(con)
     #c.fill_holes()
     #contours.append(c)
+print "Total:",len(contour)
+"""
 
+for contour in contours:
+    print contour.x
+
+
+sys.exit()
 
 # Contour evaluation
 
