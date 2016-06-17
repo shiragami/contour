@@ -8,16 +8,18 @@ import random
 import sys
 import subprocess
 from scipy.ndimage.morphology import binary_fill_holes
+from scipy.ndimage.filters import gaussian_filter
+
 
 # Read image
-#img = sm.imread("tile2_blur.png",flatten=True)
-img = sm.imread("tile2_blur.png")
+#img = sm.imread("tile2.png",flatten=True)
+img = sm.imread("tile2.png")
 img = img[:,:,0]
 size = img.shape
 
 # Todo: Pass the image buffer through Python wrapper
 # Write image as uint8
-x = np.array(img,'uint8')
+x = np.array(gaussian_filter(img,sigma=1.0),'uint8')
 fo = open("img.raw",'wb')
 x.tofile(fo)
 fo.close()
@@ -74,30 +76,7 @@ for d in data:
 
 
 
-# Evaluate contour
-"""
-for con in contour[:]:
-    l = len(con)
-    px = np.array([int(c[0]) for c in con])
-    py = np.array([int(c[1]) for c in con])
-    xmin,xmax = min(px),max(px)
-    ymin,ymax = min(py),max(py)
-    
-    py = py - ymin
-    px = px - xmin
-
-    print xmin,xmax,ymin,ymax
-    imgbin = np.zeros([ymax-ymin+1,xmax-xmin+1],dtype=np.bool)
-
-    for p in range(len(con)):
-        imgbin[py[p],px[p]] = True
-
-    imgbin = binary_fill_holes(imgbin)
-    sm.imsave("imgbin.png",imgbin)
-
-    imgcrop = img[ymin:ymax+1,xmin:xmax+1]
-    sm.imsave("imgcrop.png",imgcrop)
-"""
+# Contour evaluation
 
 # Apply sobel filter to image
 imgsobel = skimage.filters.sobel(img)
@@ -132,7 +111,7 @@ for s in score:
     flag = contourNotOverlap(contour[s[0]])
     if flag:
         drawContour(contour[s[0]])
-        for py,px in contour[s[0]]:
+        for px,py in contour[s[0]]:
             f.write("%s %s," % (py,px))
         f.write("\n")
 f.close()
