@@ -75,7 +75,6 @@ for d in data:
     contour.append(con)
 
 
-
 # Contour evaluation
 
 # Apply sobel filter to image
@@ -111,7 +110,7 @@ for s in score:
     flag = contourNotOverlap(contour[s[0]])
     if flag:
         drawContour(contour[s[0]])
-        for px,py in contour[s[0]]:
+        for py,px in contour[s[0]]:
             f.write("%s %s," % (py,px))
         f.write("\n")
 f.close()
