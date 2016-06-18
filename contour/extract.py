@@ -84,21 +84,21 @@ for contour in contours:
     else:
         contour.flag = False
 
-# Filter out
+# Filter out overlapped contours
 contours = [c for c in contours if c.flag]
 
 # Contour splitting
 print "Splitting contours"
 contours = cont.split_concave(contours)
-print len(contours)
 
-sys.exit()
 # Fill holes
 for contour in contours:
     contour.fill_holes()
 
 # Sort contour by area
 contours = sorted(contours,key=lambda x:x.area)
+
+print "Grouping contours"
 
 # Group enclosed contours together 
 Ncontours = len(contours)
@@ -108,29 +108,34 @@ for i in range(Ncontours-1):
         cj = contours[j]
         if cont.check_box_enclosed(ci,cj):
             # Crop boxj
-            py,px = ci.y - cj.y , ci.x - cj.x
+            py,px = ci.y-cj.y,ci.x-cj.x
             ch,cw = ci.img.shape
             imgtmp = cj.img[py:py+ch,px:px+cw]
 
             # Calculate ci.img U imgtmp
             if np.sum(ci.img & imgtmp) > 0:
                 cj.child.append(ci)
-                continue
+                break
 
-img = np.zeros([1024,1024])
+img = np.zeros([1024,1024,3])
        
+# Filter out contours with no child
+contours = [c for c in contours if bool(c.child)]
+
 for contour in contours:
-    if bool(contour.child):
-        if contour.score > np.max([c.score for c in contour.child]):
-            continue
+#    if bool(contour.child):
+#        if contour.score < np.max([c.score for c in contour.child]):
+#            continue
 
-        for py,px in contour.contour:
-            img[py,px] = 255
-        for child in contour.child:
-            print " ",child.score
-            for py,px in child.contour:
-                img[py,px] = 128
-
+    rcolor,gcolor,bcolor = random.randint(50,150),random.randint(50,150),random.randint(50,150)
+    for py,px in contour.contour:
+        img[py,px] = [rcolor,gcolor,bcolor]
+    """
+    for child in contour.child:
+        print " ",child.score
+        for py,px in child.contour:
+            img[py,px] = [128,128,128]
+    """
 sm.imsave("imgcontour2.png",img)
 
 #sm.imsave("imgsobel.png",imgsobel)
