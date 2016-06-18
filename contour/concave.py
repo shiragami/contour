@@ -1,78 +1,17 @@
 #!/usr/bin/python
+# Function to split concave
+# Input: contour
+# Output: list of splitted contour
+
+import contour as cont
 import numpy as np
-import subprocess
+import random
+import scipy.misc as sm
 import sys
-from scipy.ndimage.filters import gaussian_filter
-from scipy.ndimage.morphology import binary_fill_holes
 from scipy.spatial import ConvexHull
 
-# Concave splitting parameters
 DEPTH_THRESHOLD = 5.0
 SCORE_THRESHOLD = 0.7
-
-class Contour:
-    def __init__(self,contour):
-        self.contour = contour
-        self.length  = len(contour)
-
-        # Set the contour location and shape
-        px = [p[1] for p in contour]
-        py = [p[0] for p in contour]
-
-        self.x,self.y = np.min(px),np.min(py)
-        self.x2,self.y2 = np.max(px),np.max(py)
-
-        self.height = self.y2 - self.y + 1
-        self.width  = self.x2 - self.x + 1
-
-        self.img = None
-        self.area = 0
-
-        self.child = []
-        self.score = 0
-        self.flag = True
-   
-    # Create the binary image of enclosed contour
-    def fill_holes(self):
-        self.img = np.zeros([self.height,self.width],dtype=np.bool)
-        for py,px in self.contour:
-            self.img[py-self.y,px-self.x] = True
-        self.img = binary_fill_holes(self.img)
-        self.area = np.sum(self.img)
-
-# Function to trace contour on given grayscale image
-def trace(img):
-    # Todo: Pass the image buffer through Python wrapper
-    # Write image as uint8
-    x = np.array(gaussian_filter(img,sigma=1.0),'uint8')
-    fo = open("img.raw",'wb')
-    x.tofile(fo)
-    fo.close()
-
-    size = img.shape
-
-    cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
-    p = subprocess.call(cmd,stdout=subprocess.PIPE)
-    return load_contours("contour.dat")
-
-# Function to load contour from dat file
-# Return a list of contour class
-def load_contours(filename):
-    contours = []
-    data = [l.strip() for l in open(filename)]
-    for d in data:
-        con = d.split(',')[:-1]
-        con = [tuple(map(int,x.split())) for x in con]
-        c = Contour(con)
-        contours.append(c)
-    return contours
-
-# Check if bounding box of contour1 is enclosed by bounding box of contour2
-def check_box_enclosed(c1,c2):
-    if c1.x > c2.x and c1.x2 < c2.x2 and c1.y > c2.y and c1.y2 < c2.y2:
-        return True
-    else:
-        return False
 
 # Bresenham's Line Algorithm
 # http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm#Python
@@ -122,8 +61,8 @@ def draw_line(p1, p2):
     return points
 
 # Recursive function to split contours
-# This function is called by split_concave
-def split(contour,lcontour=[],pa=None,pb=None):
+# Return a list of contour
+def split_concave(contour,lcontour=[],pa=None,pb=None):
     # Prevent convex error
     if len(contour) < 3:
         return []
@@ -212,24 +151,36 @@ def split(contour,lcontour=[],pa=None,pb=None):
             c2 = contour[:s2] + line[::-1] + contour[s1+1:]
 
         # Recursive call
-        split(c1,lcontour,p1,p2)
-        split(c2,lcontour,p1,p2)
+        split_concave(c1,lcontour,p1,p2)
+        split_concave(c2,lcontour,p1,p2)
     else:
         # Stop if no split candidates
-        lcontour.append(Contour(contour))
+        lcontour.append(cont.Contour(contour))
         return []
     
     return lcontour    
 
-# Main function for concave splitting
-# Input : List of contours
-# Output: List of splitted contours
-def split_concave(contours):
-    newcontours=[]
-    for contour in contours:
-        scontours = split(contour.contour,lcontour=[])
-        if bool(scontours):
-            newcontours = newcontours + scontours
-        else:
-            newcontours.append(contour)
-    return newcontours
+# Main function starts here
+
+imgcon = np.zeros([1024,1024,3])
+contours = cont.load_contours("contour_nonoverlap.dat")
+
+newcontours=[]
+for contour in contours:
+    scontours = cont.split_concave(contour.contour,lcontour=[])
+    if bool(scontours):
+        rcolor,gcolor,bcolor = random.randint(50,150),random.randint(50,150),random.randint(50,150)
+        newcontours = newcontours + scontours
+        for scontour in scontours:
+            for py,px in scontour.contour:
+                 imgcon[py,px] = [rcolor,gcolor,bcolor]
+    else:
+        newcontours.append(contour)
+        for py,px in contour.contour:
+             imgcon[py,px] = [100,100,100]
+
+for contour in newcontours:
+    print contour.x
+
+
+sm.imsave("imgcon.png",imgcon)

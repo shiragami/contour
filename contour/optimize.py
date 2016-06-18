@@ -3,44 +3,12 @@ import numpy as np
 import scipy.misc as sm
 from scipy.ndimage.morphology import binary_fill_holes
 import sys
+import contour as cont
 
-class Contour:
-    def __init__(self,contour):
-        self.contour = contour
-
-        # Set the contour location and shape
-        px = [p[1] for p in contour]
-        py = [p[0] for p in contour]
-
-        self.x,self.y = np.min(px),np.min(py)
-        self.x2,self.y2 = np.max(px),np.max(py)
-
-        self.height = self.y2 - self.y + 1
-        self.width  = self.x2 - self.x + 1
-
-        self.img = None
-        self.area = 0
-
-        self.child = []
-        self.valid = True
-    
-    # Create the binary image of enclosed contour
-    def fill_holes(self):
-        self.img = np.zeros([self.height,self.width],dtype=np.bool)
-        for py,px in self.contour:
-            self.img[py-self.y,px-self.x] = True
-        self.img = binary_fill_holes(self.img)
-        self.area = np.sum(self.img)
-        
-# Check if bounding box of contour1 is enclosed by bounding box of contour2
-def check_box_enclosed(c1,c2):
-    if c1.x > c2.x and c1.x2 < c2.x2 and c1.y > c2.y and c1.y2 < c2.y2:
-        return True
-    else:
-        return False
 
 # Load contour
-contours = []
+contours = cont.load_contours("contour_nonoverlap.dat")
+"""
 data = [l.strip() for l in open("contour_nonoverlap.dat")]
 for d in data:
     con = d.split(',')[:-1]
@@ -48,6 +16,10 @@ for d in data:
     c = Contour(con)
     c.fill_holes()
     contours.append(c)
+"""
+for contour in contours:
+    contour.fill_holes()
+
 
 # Sort contour by area
 contours = sorted(contours,key=lambda x:x.area)
@@ -63,7 +35,7 @@ for i in range(Ncontours-1):
     ci = contours[i]
     for j in range(Ncontours-1,i,-1):
         cj = contours[j]
-        if check_box_enclosed(ci,cj):
+        if cont.check_box_enclosed(ci,cj):
             # Crop boxj
             py,px = ci.y - cj.y , ci.x - cj.x
             ch,cw = ci.img.shape

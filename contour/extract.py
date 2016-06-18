@@ -6,9 +6,8 @@ import scipy.misc as sm
 import skimage.filters
 import random
 import sys
-from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.filters import gaussian_filter
-import contour
+import contour as cont
 
 # Read image
 #img = sm.imread("tile2.png",flatten=True)
@@ -48,10 +47,11 @@ def contourNotOverlap(contour):
     return True
 
 # Run contour tracing
-#contours = contour.trace(img)
-contours = contour.load_contours("contour.dat")
-# Contour evaluation
+#contours = cont.trace(img)
+contours = cont.load_contours("contour.dat")
 
+# Contour evaluation
+print "Contour evaluation"
 # Apply sobel filter to image
 imgsobel = skimage.filters.sobel(img/255.)
 
@@ -75,15 +75,63 @@ for contour in contours:
 # Sort contours based on score
 contours = sorted(contours,key=lambda x:x.score,reverse=True)
 
+print "Removing overlapping contour"
 # Mark contour
-f = open("contour_nonoverlap.dat",'w')
+# Todo: Convert this part into a function
 for contour in contours:
     if contourNotOverlap(contour.contour):
         drawContour(contour.contour)
+    else:
+        contour.flag = False
+
+# Filter out
+contours = [c for c in contours if c.flag]
+
+# Contour splitting
+print "Splitting contours"
+contours = cont.split_concave(contours)
+print len(contours)
+
+sys.exit()
+# Fill holes
+for contour in contours:
+    contour.fill_holes()
+
+# Sort contour by area
+contours = sorted(contours,key=lambda x:x.area)
+
+# Group enclosed contours together 
+Ncontours = len(contours)
+for i in range(Ncontours-1):
+    ci = contours[i]
+    for j in range(Ncontours-1,i,-1):
+        cj = contours[j]
+        if cont.check_box_enclosed(ci,cj):
+            # Crop boxj
+            py,px = ci.y - cj.y , ci.x - cj.x
+            ch,cw = ci.img.shape
+            imgtmp = cj.img[py:py+ch,px:px+cw]
+
+            # Calculate ci.img U imgtmp
+            if np.sum(ci.img & imgtmp) > 0:
+                cj.child.append(ci)
+                continue
+
+img = np.zeros([1024,1024])
+       
+for contour in contours:
+    if bool(contour.child):
+        if contour.score > np.max([c.score for c in contour.child]):
+            continue
+
         for py,px in contour.contour:
-            f.write("%s %s," % (py,px))
-        f.write("\n")
-f.close()
+            img[py,px] = 255
+        for child in contour.child:
+            print " ",child.score
+            for py,px in child.contour:
+                img[py,px] = 128
+
+sm.imsave("imgcontour2.png",img)
 
 #sm.imsave("imgsobel.png",imgsobel)
 sm.imsave("imgcontour.png",imgcontour)
