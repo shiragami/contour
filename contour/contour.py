@@ -31,7 +31,7 @@ class Contour:
         self.img = None
         self.area = 0
 
-        self.child = []
+        self.child = None
         self.score = 0
         self.flag = True
    

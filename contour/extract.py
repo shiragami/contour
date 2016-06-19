@@ -10,8 +10,8 @@ from scipy.ndimage.filters import gaussian_filter
 import contour as cont
 
 # Read image
-#img = sm.imread("tile2.png",flatten=True)
-img = sm.imread("tile2.png")
+#img = sm.imread("tile3.png",flatten=True)
+img = sm.imread("tile3.png")
 img = img[:,:,0]
 size = img.shape
 
@@ -47,8 +47,8 @@ def contourNotOverlap(contour):
     return True
 
 # Run contour tracing
-#contours = cont.trace(img)
-contours = cont.load_contours("contour.dat")
+contours = cont.trace(img)
+#contours = cont.load_contours("contour.dat")
 
 # Contour evaluation
 print "Contour evaluation"
@@ -88,65 +88,83 @@ for contour in contours:
 contours = [c for c in contours if c.flag]
 
 # Contour splitting
-print "Splitting contours"
-contours = cont.split_concave(contours)
+#print "Splitting contours"
+#contours = cont.split_concave(contours)
 
 # Fill holes
 for contour in contours:
     contour.fill_holes()
 
 # Sort contour by area
-contours = sorted(contours,key=lambda x:x.area)
+contours = sorted(contours,key=lambda x:x.area,reverse=True)
 
 print "Grouping contours"
 
 # Group enclosed contours together 
+# Select only largest child for speed
 Ncontours = len(contours)
 for i in range(Ncontours-1):
     ci = contours[i]
-    for j in range(Ncontours-1,i,-1):
+    # Skip contour that already has parent
+    if not ci.flag:
+        continue 
+    for j in range(i+1,Ncontours):
         cj = contours[j]
-        if cont.check_box_enclosed(ci,cj):
-            # Crop boxj
-            py,px = ci.y-cj.y,ci.x-cj.x
-            ch,cw = ci.img.shape
-            imgtmp = cj.img[py:py+ch,px:px+cw]
+        if cont.check_box_enclosed(cj,ci):
+            # Crop boxi
+            py,px = cj.y-ci.y,cj.x-ci.x
+            ch,cw = cj.img.shape
+            imgtmp = ci.img[py:py+ch,px:px+cw]
 
-            # Calculate ci.img U imgtmp
-            if np.sum(ci.img & imgtmp) > 0:
-                cj.child.append(ci)
-                break
+            # Calculate cj.img U imgtmp
+            if np.sum(cj.img & imgtmp) > 0:
+                if ci.child is None:
+                    ci.child = cj
+                # Flag contour - has parent
+                cj.flag = False
+
 
 img = np.zeros([1024,1024,3])
-img = sm.imread("tile2.png")
+img = sm.imread("tile3.png")
 
-# My assumption: Nuclei region has many contours groupe together. Need to pick the suitable one.
-contours = [c for c in contours if bool(c.child)]
+
+pcontours = [c for c in contours if c.child is not None]
+contours = []
+for contour in pcontours:
+    # Try to split parent
+    scontours = cont.split_concave([contour])
+    if len(scontours) == 1:
+        # Case no split. Select either parent/child, which has better circularity.
+        # My assumption: Nuclei region has many contours groupe together. Need to pick the suitable one.
+
+        # Calculate circularity
+        cparent = float(contour.area)/float(contour.length**2)
+        cchild  = float(contour.child.area)/float(contour.child.length**2)
+
+        if cparent > cchild:
+            contours.append(contour)
+        else:
+            contours.append(contour.child)
+    else:
+        for scontour in scontours:
+            scontour.fill_holes()
+            cchild  = float(scontour.area)/float(scontour.length**2)
+            print cchild
+            if cchild > 0.06:
+                contours.append(scontour)
+            
+# Remove small contours
+contours = [c for c in contours if c.length > 100]
+
 
 for contour in contours:
-    # Select child with the largest area
-    child = contour.child[np.argmax([c.area for c in contour.child])]
     rcolor,gcolor,bcolor = random.randint(50,75),random.randint(100,150),random.randint(100,150)
-
-    # Calculate circularity. Higher value means less circular.
-    cparent = float(contour.length**2) / float(contour.area)
-    cchild  = float(child.length**2) / float(child.area)
-
-    if cparent > cchild:
-        for py,px in child.contour:
-            img[py,px] = [rcolor,gcolor,bcolor]
-
-        for py,px in contour.contour:
-            img[py,px] = [32,32,32]
-    else:
-        for py,px in contour.contour:
-            img[py,px] = [rcolor,gcolor,bcolor]
-
-        for py,px in child.contour:
-            img[py,px] = [32,32,32]
+    for py,px in contour.contour:
+        img[py,px] = [155,185,155]
 
 
 sm.imsave("imgcontour2.png",img)
+sm.imsave("imgcontour.png",imgcontour)
         
 sys.exit()      
 # Filter out contours with no child
@@ -171,5 +189,4 @@ for contour in contours:
 sm.imsave("imgcontour2.png",img)
 
 #sm.imsave("imgsobel.png",imgsobel)
-sm.imsave("imgcontour.png",imgcontour)
 #sm.imsave("imgmark.png",imgmark)
