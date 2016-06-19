@@ -6,7 +6,7 @@ import scipy.ndimage.morphology
 
 # Read input image
 imgbin = sm.imread("sample/sample6.png",flatten=True) < 10
-
+print imgbin.shape
 # Compute the chamfer distance transform
 imgdis = scipy.ndimage.morphology.distance_transform_cdt(imgbin,metric='taxicab')
 

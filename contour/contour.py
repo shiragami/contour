@@ -3,12 +3,15 @@ import numpy as np
 import subprocess
 import sys
 from scipy.ndimage.filters import gaussian_filter
-from scipy.ndimage.morphology import binary_fill_holes
+from scipy.ndimage.morphology import binary_fill_holes,distance_transform_cdt
 from scipy.spatial import ConvexHull
 
 # Concave splitting parameters
 DEPTH_THRESHOLD = 5.0
 SCORE_THRESHOLD = 0.7
+
+# Contour optimization parameter
+DISTANCE_THRESHOLD = 7
 
 class Contour:
     def __init__(self,contour):
@@ -233,3 +236,33 @@ def split_concave(contours):
         else:
             newcontours.append(contour)
     return newcontours
+
+# Function to remove filament/bump from contours
+# Input: List of contour class. (Holes filled)
+def optimize_contour(contours):
+    for contour in contours:
+        # Compute the chamfer distance transform
+        imgpad = np.zeros([contour.height+2,contour.width+2],dtype=np.bool)
+        imgpad[1:contour.height+1,1:contour.width+1] = contour.img
+        imgdis = distance_transform_cdt(imgpad,metric='taxicab')
+
+        for d in range(DISTANCE_THRESHOLD-1,0,-1):
+            for i in range(1,contour.height+1):
+                for j in range(1,contour.width+1):
+                    d0 = imgdis[i][j]
+                    if d0 != d:
+                        continue
+                    d1 = imgdis[i+1,j]
+                    d2 = imgdis[i,j+1]
+                    d3 = imgdis[i-1,j]
+                    d4 = imgdis[i,j-1]
+
+                    if d1 <= d and d2 <= d and d3 <=d and d4 <=d:
+                        imgdis[i][j] = d-1
+
+            for i in range(contour.height+2):
+                for j in range(contour.width+2):
+                    if imgdis[i][j] <= 0:
+                        imgpad[i][j] = False
+        contour.img = imgpad[1:contour.height+1,1:contour.width+1]
+    return contours

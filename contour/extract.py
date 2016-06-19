@@ -118,26 +118,58 @@ for i in range(Ncontours-1):
                 break
 
 img = np.zeros([1024,1024,3])
-       
-# Filter out contours with no child
+img = sm.imread("tile2.png")
+
+# My assumption: Nuclei region has many contours groupe together. Need to pick the suitable one.
 contours = [c for c in contours if bool(c.child)]
 
 for contour in contours:
-#    if bool(contour.child):
-#        if contour.score < np.max([c.score for c in contour.child]):
-#            continue
+    # Select child with the largest area
+    child = contour.child[np.argmax([c.area for c in contour.child])]
+    rcolor,gcolor,bcolor = random.randint(50,75),random.randint(100,150),random.randint(100,150)
 
-    rcolor,gcolor,bcolor = random.randint(50,150),random.randint(50,150),random.randint(50,150)
+    # Calculate circularity. Higher value means less circular.
+    cparent = float(contour.length**2) / float(contour.area)
+    cchild  = float(child.length**2) / float(child.area)
+
+    if cparent > cchild:
+        for py,px in child.contour:
+            img[py,px] = [rcolor,gcolor,bcolor]
+
+        for py,px in contour.contour:
+            img[py,px] = [32,32,32]
+    else:
+        for py,px in contour.contour:
+            img[py,px] = [rcolor,gcolor,bcolor]
+
+        for py,px in child.contour:
+            img[py,px] = [32,32,32]
+
+
+sm.imsave("imgcontour2.png",img)
+        
+sys.exit()      
+# Filter out contours with no child
+#contours = [c for c in contours if bool(c.child)]
+
+# Remove filament/bump from contour
+print "Contour optimization"
+contours = cont.optimize_contour(contours)
+
+imgmask = np.zeros([1024,1024],dtype=np.bool)
+for contour in contours:
+    imgmask[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width] |= contour.img
+
+img[imgmask] = [32,32,32]
+for contour in contours:
+    rcolor,gcolor,bcolor = random.randint(50,75),random.randint(100,150),random.randint(100,150)
     for py,px in contour.contour:
         img[py,px] = [rcolor,gcolor,bcolor]
-    """
-    for child in contour.child:
-        print " ",child.score
-        for py,px in child.contour:
-            img[py,px] = [128,128,128]
-    """
+
+
+
 sm.imsave("imgcontour2.png",img)
 
 #sm.imsave("imgsobel.png",imgsobel)
 sm.imsave("imgcontour.png",imgcontour)
-sm.imsave("imgmark.png",imgmark)
+#sm.imsave("imgmark.png",imgmark)
