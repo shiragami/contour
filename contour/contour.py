@@ -48,15 +48,15 @@ def trace(img):
     # Todo: Pass the image buffer through Python wrapper
     # Write image as uint8
     x = np.array(gaussian_filter(img,sigma=1.0),'uint8')
-    fo = open("img.raw",'wb')
+    fo = open(".img.raw",'wb')
     x.tofile(fo)
     fo.close()
 
     size = img.shape
 
-    cmd = ["./trace","img.raw",str(size[0]),str(size[1])]
+    cmd = ["./trace",".img.raw",str(size[0]),str(size[1])]
     p = subprocess.call(cmd,stdout=subprocess.PIPE)
-    return load_contours("contour.dat")
+    return load_contours(".contour.dat")
 
 # Function to load contour from dat file
 # Return a list of contour class
@@ -276,3 +276,50 @@ def dump_contour(filename,contours):
         fo.write("\n")
     fo.close()
 
+# Remove overlapping contours based on score
+def remove_overlapping_contour(contours,size):
+    imgmark = np.zeros([size[0],size[1]],dtype=np.bool)
+
+    for contour in contours:
+        flag = True
+        for py,px in contour.contour:
+            # Break if a single point is already used
+            if imgmark[py,px]:
+                flag = False
+                break
+        if flag:
+            # Mark contour
+            for py,px in contour.contour:
+                imgmark[py,px] = True
+        else:
+            contour.flag = False
+
+    # Filter out overlapped contours
+    return [c for c in contours if c.flag]
+
+# Function to draw contour on RGB image
+def draw_contour(contours,imgRGB):
+    """
+    rcolor,gcolor,bcolor = random.randint(50,75),random.randint(100,150),random.randint(100,150)
+    py,px = contour[0]
+    imgcontour[py,px] = [rcolor-50,gcolor-50,bcolor-50]
+    py,px = contour[-1]
+    imgcontour[py,px] = [rcolor+50,gcolor+50,bcolor+50]
+    """
+    for contour in contours:
+        for py,px in contour.contour:
+            imgRGB[py,px] = [155,185,155]
+    return imgRGB
+
+# Dump the contours as label image
+# Useful for manual tagging later
+def dump_label(filename,contours,size):
+    imglabel = np.zeros([size[0],size[1]],dtype=np.int32)
+
+    # Label hack
+    for c,contour in enumerate(contours):
+        imglabel[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width] = (contour.img)*(c+1)
+
+    fo = open(filename,'wb')
+    imglabel.tofile(fo)
+    fo.close()

@@ -129,7 +129,7 @@ int main(int argc, char *argv[]){
     fclose(fimg);
 
     /* Open file for output */
-    fcontour = fopen("contour.dat","w");
+    fcontour = fopen(".contour.dat","w");
     if(fcontour == NULL){
         printf("Error opening output file\n");
     }

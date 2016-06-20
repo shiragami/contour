@@ -1,13 +1,28 @@
 #!/usr/bin/python
+import contour as cont
 import numpy as np
 import scipy.misc as sm
-from scipy.ndimage.morphology import binary_fill_holes
 import sys
-import contour as cont
-
 
 # Load contour
-contours = cont.load_contours("contour_nonoverlap.dat")
+contours = cont.load_contours("contour_final.txt")
+
+# Load marked contour
+marked = [l.strip() for l in open("marked.txt")]
+img = sm.imread("tile3.png")
+
+for c,contour in enumerate(contours):
+    contour.fill_holes()
+    imgcrop = img[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
+    imgcropR = np.ma.array(imgcrop[:,:,0],mask = np.invert(contour.img))
+    imgcropG = np.ma.array(imgcrop[:,:,1],mask = np.invert(contour.img))
+    imgcropB = np.ma.array(imgcrop[:,:,2],mask = np.invert(contour.img))
+    if str(c) not in marked:
+        print np.mean(imgcropR),np.mean(imgcropB)
+
+sys.exit()
+
+
 """
 data = [l.strip() for l in open("contour_nonoverlap.dat")]
 for d in data:
