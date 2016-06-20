@@ -266,3 +266,13 @@ def optimize_contour(contours):
                         imgpad[i][j] = False
         contour.img = imgpad[1:contour.height+1,1:contour.width+1]
     return contours
+
+# Dump a list of contour to file
+def dump_contour(filename,contours):
+    fo = open(filename,'w')
+    for contour in contours:
+        for p in contour.contour:
+            fo.write("%s %s," % p)
+        fo.write("\n")
+    fo.close()
+

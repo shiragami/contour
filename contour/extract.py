@@ -47,8 +47,8 @@ def contourNotOverlap(contour):
     return True
 
 # Run contour tracing
-contours = cont.trace(img)
-#contours = cont.load_contours("contour.dat")
+#contours = cont.trace(img)
+contours = cont.load_contours("contour.dat")
 
 # Contour evaluation
 print "Contour evaluation"
@@ -149,30 +149,52 @@ for contour in pcontours:
         for scontour in scontours:
             scontour.fill_holes()
             cchild  = float(scontour.area)/float(scontour.length**2)
-            print cchild
             if cchild > 0.06:
                 contours.append(scontour)
             
+#print "Contour optimization"
 # Remove small contours
 contours = [c for c in contours if c.length > 100]
+#contours = cont.optimize_contour(contours)
 
-
+# Select contours with the right color features
 for contour in contours:
-    rcolor,gcolor,bcolor = random.randint(50,75),random.randint(100,150),random.randint(100,150)
-    for py,px in contour.contour:
-        img[py,px] = [155,185,155]
+    imgcrop = img[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
+    imgcropR = np.ma.array(imgcrop[:,:,0],mask = np.invert(contour.img))
+    imgcropB = np.ma.array(imgcrop[:,:,1],mask = np.invert(contour.img))
+    #if np.mean(imgcropR) > np.mean(imgcropB):
+    if np.mean(imgcropR) > 100:
+        contour.flag = False
+    else:
+        contour.flag = True
+
+imglabel = np.zeros([1024,1024],dtype=np.int32)
+
+for c,contour in enumerate(contours):
+    if contour.flag:
+        rcolor,gcolor,bcolor = random.randint(50,75),random.randint(100,150),random.randint(100,150)
+        for py,px in contour.contour:
+            img[py,px] = [155,185,155]
+    # Label hack
+    imglabel[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width] = (contour.img)*(c+1)
+
+# Dump contour
+cont.dump_contour("contour_final.txt",contours)
+
 
 
 sm.imsave("imgcontour2.png",img)
 sm.imsave("imgcontour.png",imgcontour)
+
+fo = open("imglabel.bin",'wb')
+imglabel.tofile(fo)
+fo.close()
         
 sys.exit()      
 # Filter out contours with no child
 #contours = [c for c in contours if bool(c.child)]
 
 # Remove filament/bump from contour
-print "Contour optimization"
-contours = cont.optimize_contour(contours)
 
 imgmask = np.zeros([1024,1024],dtype=np.bool)
 for contour in contours:
