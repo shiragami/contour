@@ -9,10 +9,15 @@ import skimage.filters
 import sys
 from scipy.ndimage.filters import gaussian_filter
 
+n = 9
 # Read image
-imgRGB = sm.imread("tile3.png")
+imgRGB = sm.imread("samples/tile%s.png"%n)
 img = imgRGB[:,:,0]
 size = img.shape
+
+# Load stain component
+#imgH = 255 - np.memmap("./samples/stain/tile%s_H.raw"%n,dtype=np.uint8,shape=(1024,1024),mode='r')
+#imgE = 255 - np.memmap("./samples/stain/tile%s_E.raw"%n,dtype=np.uint8,shape=(1024,1024),mode='r')
 
 # Run contour tracing
 contours = cont.trace(img)
@@ -41,9 +46,12 @@ for contour in contours:
 
 # Sort contours based on score
 contours = sorted(contours,key=lambda x:x.score,reverse=True)
+sm.imsave("imgcontour2.png",cont.draw_contour(contours,imgRGB))
+sys.exit()
 
 print "Removing overlapping contour"
 contours = cont.remove_overlapping_contour(contours,size)
+
 
 # Fill holes
 for contour in contours:
@@ -109,6 +117,21 @@ contours = [c for c in contours if c.length > 100]
 #contours = cont.optimize_contour(contours)
 
 # Select contours with the right color features
+"""
+for contour in contours:
+    imgcrop = imgH[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
+    imgcropH = np.ma.array(imgcrop,mask = np.invert(contour.img))
+
+    imgcrop = imgE[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
+    imgcropE = np.ma.array(imgcrop,mask = np.invert(contour.img))
+    
+    uH = np.mean(imgcropH)/255.
+    uE = np.mean(imgcropE)/255.
+    contour.flag = True if uH > 0.56 and uE < 0.5 else False
+contours = [c for c in contours if c.flag]
+"""
+
+"""
 for contour in contours:
     imgcrop = imgRGB[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
     imgcropR = np.ma.array(imgcrop[:,:,0],mask = np.invert(contour.img))
@@ -118,7 +141,7 @@ for contour in contours:
         contour.flag = False
     else:
         contour.flag = True
-
+"""
 
 # Draw contour
 sm.imsave("imgcontour.png",cont.draw_contour(contours,imgRGB))

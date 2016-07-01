@@ -4,21 +4,43 @@ import numpy as np
 import scipy.misc as sm
 import sys
 
-# Load contour
-contours = cont.load_contours("contour_final.txt")
+fptive = open("positive.dat",'w')
+fntive = open("negative.dat",'w')
 
-# Load marked contour
-marked = [l.strip() for l in open("marked.txt")]
-img = sm.imread("tile3.png")
+for n in range(1,6):
+    # Load contour
+    contours = cont.load_contours("./samples/contour%s.txt"%n)
 
-for c,contour in enumerate(contours):
-    contour.fill_holes()
-    imgcrop = img[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
-    imgcropR = np.ma.array(imgcrop[:,:,0],mask = np.invert(contour.img))
-    imgcropG = np.ma.array(imgcrop[:,:,1],mask = np.invert(contour.img))
-    imgcropB = np.ma.array(imgcrop[:,:,2],mask = np.invert(contour.img))
-    if str(c) not in marked:
-        print np.mean(imgcropR),np.mean(imgcropB)
+    # Load marked contour
+    marked = [l.strip() for l in open("./samples/marked%s.txt"%n)]
+    img = sm.imread("./samples/tile%s.png"%n)
+
+    # Load stain component
+    imgH = 255 - np.memmap("./samples/stain/tile%s_H.raw"%n,dtype=np.uint8,shape=(1024,1024),mode='r')
+    imgE = 255 - np.memmap("./samples/stain/tile%s_E.raw"%n,dtype=np.uint8,shape=(1024,1024),mode='r')
+
+    # Get color features
+    for c,contour in enumerate(contours):
+        contour.fill_holes()
+        imgcrop = img[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
+        imgcropR = np.ma.array(imgcrop[:,:,0],mask = np.invert(contour.img))
+        imgcropG = np.ma.array(imgcrop[:,:,1],mask = np.invert(contour.img))
+        imgcropB = np.ma.array(imgcrop[:,:,2],mask = np.invert(contour.img))
+
+        imgcrop = imgH[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
+        imgcropH = np.ma.array(imgcrop,mask = np.invert(contour.img))
+
+        imgcrop = imgE[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width]
+        imgcropE = np.ma.array(imgcrop,mask = np.invert(contour.img))
+
+        if str(c) in marked:
+            fntive.write("%s %s\n" % (np.mean(imgcropH)/255.,np.mean(imgcropE)/255.))
+        else:
+            fptive.write("%s %s\n" % (np.mean(imgcropH)/255.,np.mean(imgcropE)/255.))
+        
+
+fptive.close()
+fntive.close()
 
 sys.exit()
 

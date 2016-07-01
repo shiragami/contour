@@ -9,7 +9,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #define OFFSET 10
-#define MAXSTEP 500
+#define MAXSTEP 700
 #define MINSTEP 100
 
 unsigned char **img;
