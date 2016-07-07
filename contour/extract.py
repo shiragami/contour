@@ -9,11 +9,15 @@ import skimage.filters
 import sys
 from scipy.ndimage.filters import gaussian_filter
 
-n = 9
+n = 6
 # Read image
-imgRGB = sm.imread("samples/tile%s.png"%n)
+fname = sys.argv[1]
+#imgRGB = sm.imread(fname)
+imgRGB = sm.imread("samples2/%s_rgb.png"%n)
 img = imgRGB[:,:,0]
+img = np.memmap(fname,dtype=np.uint8,shape=(1024,1024),mode='r')
 size = img.shape
+
 
 # Load stain component
 #imgH = 255 - np.memmap("./samples/stain/tile%s_H.raw"%n,dtype=np.uint8,shape=(1024,1024),mode='r')
@@ -46,8 +50,7 @@ for contour in contours:
 
 # Sort contours based on score
 contours = sorted(contours,key=lambda x:x.score,reverse=True)
-sm.imsave("imgcontour2.png",cont.draw_contour(contours,imgRGB))
-sys.exit()
+#sm.imsave("imgcontour2.png",cont.draw_contour(contours,imgRGB))
 
 print "Removing overlapping contour"
 contours = cont.remove_overlapping_contour(contours,size)
@@ -105,10 +108,13 @@ for contour in pcontours:
         else:
             contours.append(contour.child)
     else:
+        contours.append(contour) # Edited to skip splitting
+        continue
+
         for scontour in scontours:
             scontour.fill_holes()
             cchild  = float(scontour.area)/float(scontour.length**2)
-            if cchild > 0.06:
+            if cchild > 0.04:
                 contours.append(scontour)
             
 #print "Contour optimization"
@@ -144,7 +150,7 @@ for contour in contours:
 """
 
 # Draw contour
-sm.imsave("imgcontour.png",cont.draw_contour(contours,imgRGB))
+#sm.imsave("imgcontour.png",cont.draw_contour(contours,imgRGB))
 
 # Dump contour
 cont.dump_contour("contour_final.txt",contours)

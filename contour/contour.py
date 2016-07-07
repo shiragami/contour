@@ -2,6 +2,7 @@
 import numpy as np
 import subprocess
 import sys
+import random
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.morphology import binary_fill_holes,distance_transform_cdt
 from scipy.spatial import ConvexHull
@@ -298,17 +299,20 @@ def remove_overlapping_contour(contours,size):
     return [c for c in contours if c.flag]
 
 # Function to draw contour on RGB image
-def draw_contour(contours,imgRGB):
-    """
-    rcolor,gcolor,bcolor = random.randint(50,75),random.randint(100,150),random.randint(100,150)
-    py,px = contour[0]
-    imgcontour[py,px] = [rcolor-50,gcolor-50,bcolor-50]
-    py,px = contour[-1]
-    imgcontour[py,px] = [rcolor+50,gcolor+50,bcolor+50]
-    """
-    for contour in contours:
-        for py,px in contour.contour:
-            imgRGB[py,px] = [155,185,155]
+def draw_contour(contours,imgRGB,color=None):
+    imgRGB = imgRGB[:,:,:]
+    # If color not specified use best contrast
+    if color is None:
+        pr,pg,pb = np.mean(imgRGB[:,:,0]),np.mean(imgRGB[:,:,1]),np.mean(imgRGB[:,:,2])
+        for contour in contours:
+            for py,px in contour.contour:
+                imgRGB[py,px] = [255-pr,255-pg,255-pb]
+    elif color == 'random':
+        for contour in contours:
+            pr,pg,pb = random.randint(75,100),random.randint(75,100),random.randint(75,100)
+            for py,px in contour.contour:
+                imgRGB[py,px] = [pr,pg,pb]
+                
     return imgRGB
 
 # Dump the contours as label image
