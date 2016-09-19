@@ -8,16 +8,24 @@ import scipy.misc as sm
 import skimage.filters
 import sys
 from scipy.ndimage.filters import gaussian_filter
+from skimage.filters import gaussian
 
-n = 6
 # Read image
-fname = sys.argv[1]
-#imgRGB = sm.imread(fname)
-imgRGB = sm.imread("samples2/%s_rgb.png"%n)
-img = imgRGB[:,:,0]
-img = np.memmap(fname,dtype=np.uint8,shape=(1024,1024),mode='r')
-size = img.shape
+#fname = sys.argv[1]
 
+fname = "/home/tk2/Desktop/sotsuron/holo/D2/rgb_5.png"
+
+imgRGB = sm.imread(fname)
+#imgRGB = sm.imresize(imgRGB,(512,512))
+#imgRGB = sm.imread("samples2/%s_rgb.png"%n)
+#img = imgRGB[:,:,0]
+print fname
+#img = np.memmap(fname,dtype=np.uint8,shape=(1024,1024),mode='r')
+
+img = sm.imread(fname,flatten=True)
+img = sm.imresize(img,(512,512))
+imgRGB = sm.imresize(imgRGB,(512,512))
+size = img.shape
 
 # Load stain component
 #imgH = 255 - np.memmap("./samples/stain/tile%s_H.raw"%n,dtype=np.uint8,shape=(1024,1024),mode='r')
@@ -47,13 +55,13 @@ for contour in contours:
             gfit +=1.
     gfit = gfit/float(contour.length)
     contour.score = gfit*gmean
+    contour.score = gmean # edit
 
 # Sort contours based on score
-contours = sorted(contours,key=lambda x:x.score,reverse=True)
+#contours = sorted(contours,key=lambda x:x.score,reverse=True)
 #sm.imsave("imgcontour2.png",cont.draw_contour(contours,imgRGB))
 
 print "Removing overlapping contour"
-contours = cont.remove_overlapping_contour(contours,size)
 
 
 # Fill holes
@@ -88,7 +96,16 @@ for i in range(Ncontours-1):
                 # Flag contour - has parent
                 cj.flag = False
 
+# start edit
+contours = [c for c in contours if c.child is not None]
+contours = sorted(contours,key=lambda x:x.score,reverse=True)
+contours = cont.remove_overlapping_contour(contours,size)
+print "length",len(contours)
+#cont.dump_contour("contour.txt",contours)
+#sys.exit()
+# end edit
 
+"""
 # Select the most suitable contour from group
 pcontours = [c for c in contours if c.child is not None]
 contours = []
@@ -116,7 +133,9 @@ for contour in pcontours:
             cchild  = float(scontour.area)/float(scontour.length**2)
             if cchild > 0.04:
                 contours.append(scontour)
-            
+
+"""
+         
 #print "Contour optimization"
 # Remove small contours
 contours = [c for c in contours if c.length > 100]
@@ -150,7 +169,7 @@ for contour in contours:
 """
 
 # Draw contour
-#sm.imsave("imgcontour.png",cont.draw_contour(contours,imgRGB))
+sm.imsave("imgcontour.png",cont.draw_contour(contours,imgRGB))
 
 # Dump contour
 cont.dump_contour("contour_final.txt",contours)

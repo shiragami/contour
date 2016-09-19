@@ -9,13 +9,13 @@
 #include<stdio.h>
 #include<stdlib.h>
 #define OFFSET 10
-#define MAXSTEP 700
-#define MINSTEP 100
 
 unsigned char **img;
 int imgH,imgW;
 int count = 0;
 FILE *fcontour;
+
+int MINSTEP,MAXSTEP;
 
 void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 
@@ -96,13 +96,16 @@ void MooreTrace(int sx,int sy,int thres_min,int thres_max){
 int main(int argc, char *argv[]){
     int i,j;
 
-    if(argc!=4){
-        printf("trace <imgfile> <imgheight> <imgwidth>\n");
+    if(argc!=6){
+        printf("trace <imgfile> <imgheight> <imgwidth> <min> <max>\n");
         exit(1);
     }
 
     imgH = atoi(argv[2]);
     imgW = atoi(argv[3]);
+    MINSTEP = atoi(argv[4]);
+    MAXSTEP = atoi(argv[5]);
+
     printf("Imgsize %d %d\n",imgH,imgW);
 
     /* Create buffer for input image uint8 */
@@ -111,6 +114,7 @@ int main(int argc, char *argv[]){
             img[i] = (unsigned char *) malloc(sizeof(unsigned char)*imgW);
         }
     }
+
 
     /* Read image*/
     /* Todo: Pass the buffer through Python */

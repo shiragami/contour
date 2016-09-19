@@ -45,7 +45,7 @@ class Contour:
         self.area = np.sum(self.img)
 
 # Function to trace contour on given grayscale image
-def trace(img):
+def trace(img,minlen=100,maxlen=700):
     # Todo: Pass the image buffer through Python wrapper
     # Write image as uint8
     x = np.array(gaussian_filter(img,sigma=1.0),'uint8')
@@ -55,7 +55,7 @@ def trace(img):
 
     size = img.shape
 
-    cmd = ["./trace",".img.raw",str(size[0]),str(size[1])]
+    cmd = ["/home/tk2/Desktop/nucleisegmentation/contour/trace",".img.raw",str(size[0]),str(size[1]),str(minlen),str(maxlen)]
     p = subprocess.call(cmd,stdout=subprocess.PIPE)
     return load_contours(".contour.dat")
 
