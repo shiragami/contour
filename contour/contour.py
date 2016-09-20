@@ -323,6 +323,10 @@ def stitch(contour):
     NPOINT = len(scontour)
     for p in range(NPOINT-1):
         p1,p2 = scontour[p],scontour[p+1]
+
+        if p1[0]==p2[0] and p1[1]==p2[1]:
+            continue
+
         if abs(p1[0]-p2[0])>1 or abs(p1[1]-p2[1])>1:
             line = draw_line(p1,p2)
             contour  = contour + line[:-1]
