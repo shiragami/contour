@@ -315,6 +315,23 @@ def draw_contour(contours,imgRGB,color=None):
                 
     return imgRGB
 
+# Function to stitch non-connected contours
+def stitch(contour):
+    scontour = contour + [contour[0]] # Connect head to tail
+    contour = []
+
+    NPOINT = len(scontour)
+    for p in range(NPOINT-1):
+        p1,p2 = scontour[p],scontour[p+1]
+        if abs(p1[0]-p2[0])>1 or abs(p1[1]-p2[1])>1:
+            line = draw_line(p1,p2)
+            contour  = contour + line[:-1]
+        else:
+            contour  = contour + [p1]
+
+    return contour
+
+
 # Dump the contours as label image
 # Useful for manual tagging later
 def dump_label(filename,contours,size):
