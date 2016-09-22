@@ -6,10 +6,12 @@ import random
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.morphology import binary_fill_holes,distance_transform_cdt
 from scipy.spatial import ConvexHull
+import scipy.misc as sm
 
 # Concave splitting parameters
 DEPTH_THRESHOLD = 5.0
 SCORE_THRESHOLD = 0.7
+DIAMETER_RATIO = 0.5
 
 # Contour optimization parameter
 DISTANCE_THRESHOLD = 7
@@ -32,10 +34,16 @@ class Contour:
         self.img = None
         self.area = 0
 
-        self.child = None
+        self.child = []
+        self.parent = None
         self.score = 0
         self.flag = True
-   
+
+        self.gy = np.mean(py)
+        self.gx = np.mean(px)
+
+
+
     # Create the binary image of enclosed contour
     def fill_holes(self):
         self.img = np.zeros([self.height,self.width],dtype=np.bool)
@@ -128,6 +136,7 @@ def draw_line(p1, p2):
 # Recursive function to split contours
 # This function is called by split_concave
 def split(contour,lcontour=[],pa=None,pb=None):
+
     # Prevent convex error
     if len(contour) < 3:
         return []
@@ -172,7 +181,7 @@ def split(contour,lcontour=[],pa=None,pb=None):
             theta = np.arctan2(dy,dx)
             theta = -theta if dy*(x0-x1) + y1*dx > y0*dx else theta
             consegments.append((points,theta))
-        
+
     minscore = SCORE_THRESHOLD
 
     # Match the consegments for possible cut
@@ -200,10 +209,15 @@ def split(contour,lcontour=[],pa=None,pb=None):
         if p1==pa and p2==pb:
             return []
 
-        # Split contour into two parts #
         # Draw the cutting line
         line = draw_line(p1,p2)
-        
+
+        # Cutting line thresholding
+        if len(line)*np.pi > DIAMETER_RATIO*len(contour):
+            if len(consegments) != 2: # Split anyway if there's only 2 curve points
+                lcontour.append(Contour(contour))
+                return []
+
         # Find index of point in contour
         s1,s2 = contour.index(p1),contour.index(p2)
         
@@ -312,6 +326,10 @@ def draw_contour(contours,imgRGB,color=None):
             pr,pg,pb = random.randint(75,100),random.randint(75,100),random.randint(75,100)
             for py,px in contour.contour:
                 imgRGB[py,px] = [pr,pg,pb]
+    else:
+        for contour in contours:
+            for py,px in contour.contour:
+                imgRGB[py,px] = color
                 
     return imgRGB
 
