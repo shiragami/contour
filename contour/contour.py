@@ -65,7 +65,7 @@ def trace(img,minlen=100,maxlen=700):
 
     cmd = ["/home/tk2/Desktop/nucleisegmentation/contour/trace",".img.raw",str(size[0]),str(size[1]),str(minlen),str(maxlen)]
     p = subprocess.call(cmd,stdout=subprocess.PIPE)
-    return load_contours(".contour.dat")
+    return load(".contour.dat")
 
 # Function to load contour from dat file
 # Return a list of contour class
@@ -288,6 +288,9 @@ def optimize_contour(contours):
 def dump_contour(filename,contours):
     fo = open(filename,'w')
     for contour in contours:
+        # Skip empty contour
+        if len(contour.contour)==0:
+            continue
         for p in contour.contour:
             fo.write("%s %s," % p)
         fo.write("\n")
@@ -359,11 +362,14 @@ def stitch(contour):
 # Dump the contours as label image
 # Useful for manual tagging later
 def dump_label(filename,contours,size):
-    imglabel = np.zeros([size[0],size[1]],dtype=np.int32)
+    imglabel = np.zeros(size,dtype=np.int32)
 
     # Label hack
     for c,contour in enumerate(contours):
-        imglabel[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width] = (contour.img)*(c+1)
+        # Set overlapping region to zero
+        imglabel[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width] *= ~contour.img
+        # Append new label
+        imglabel[contour.y:contour.y+contour.height,contour.x:contour.x+contour.width] += (contour.img)*(c+1)
 
     fo = open(filename,'wb')
     imglabel.tofile(fo)
