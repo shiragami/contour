@@ -45,7 +45,7 @@ class Contour:
 
 
     # Create the binary image of enclosed contour
-    def fill_holes(self):
+    def fill(self):
         self.img = np.zeros([self.height,self.width],dtype=np.bool)
         for py,px in self.contour:
             self.img[py-self.y,px-self.x] = True
@@ -69,10 +69,12 @@ def trace(img,minlen=100,maxlen=700):
 
 # Function to load contour from dat file
 # Return a list of contour class
-def load_contours(filename):
+def load(filename):
     contours = []
     data = [l.strip() for l in open(filename)]
     for d in data:
+        if len(d) == 0:
+            continue
         con = d.split(',')[:-1]
         con = [tuple(map(int,x.split())) for x in con]
         c = Contour(con)
@@ -366,3 +368,16 @@ def dump_label(filename,contours,size):
     fo = open(filename,'wb')
     imglabel.tofile(fo)
     fo.close()
+
+# Function to calculate contour uniformity?
+def calc_std(contour):
+    sy = np.array([c[0] for c in contour.contour])
+    sx = np.array([c[1] for c in contour.contour])
+    
+    sy = (sy-contour.gy)**2
+    sx = (sx-contour.gx)**2
+
+    dd = np.sqrt(sy + sx)
+
+    std = np.std(dd)/np.mean(dd)
+    return 
