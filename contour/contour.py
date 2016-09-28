@@ -42,7 +42,7 @@ class Contour:
         self.gy = np.mean(py)
         self.gx = np.mean(px)
 
-
+        self.tag = 0
 
     # Create the binary image of enclosed contour
     def fill(self):
@@ -51,6 +51,24 @@ class Contour:
             self.img[py-self.y,px-self.x] = True
         self.img = binary_fill_holes(self.img)
         self.area = np.sum(self.img)
+    
+    def downscale(self,scale):
+        newcontour = []
+        for py,px in self.contour:
+            point = (py/scale,px/scale)
+            if point not in newcontour:
+                newcontour.append(point)
+        self.contour = newcontour
+        self.length  = len(newcontour)
+
+        self.gx,self.gy = self.gx/float(scale),self.gy/float(scale)
+        self.x,self.y = self.x/scale,self.y/scale
+        self.height = self.y2 - self.y + 1
+        self.width  = self.x2 - self.x + 1
+
+        self.fill()
+
+        return
 
 # Function to trace contour on given grayscale image
 def trace(img,minlen=100,maxlen=700):
@@ -71,13 +89,35 @@ def trace(img,minlen=100,maxlen=700):
 # Return a list of contour class
 def load(filename):
     contours = []
-    data = [l.strip() for l in open(filename)]
-    for d in data:
-        if len(d) == 0:
+    datas = [l.strip() for l in open(filename)]
+    
+    header = datas[0]
+    tagged = False
+    # Check if header exist
+    if header[0] == '#':
+        header = header[1:].split(" ") 
+        length = int(header[0])
+        tagged = True if header[1]=='1' else False
+
+        if tagged:
+            tags  = datas[length+1:]
+            datas = datas[1:length+1]
+
+            if len(datas) != len(tags):
+                print "Tag mismatch %s %s"  % (len(datas),len(tags))
+                sys.exit()
+        else:
+            datas = datas[1:]
+
+
+    for d,data in enumerate(datas):
+        if len(data) == 0:
             continue
-        con = d.split(',')[:-1]
+        con = data.split(',')[:-1]
         con = [tuple(map(int,x.split())) for x in con]
         c = Contour(con)
+        if tagged:
+            c.tag = tags[d]
         contours.append(c)
     return contours
 
@@ -285,15 +325,28 @@ def optimize_contour(contours):
     return contours
 
 # Dump a list of contour to file
-def dump_contour(filename,contours):
+def dump_contour(filename,contours,tag=False):
+
+    # Remove zero contour
+    # I use len instead of contour.length for safety
+    contours = [c for c in contours if len(c.contour)!=0]
+
     fo = open(filename,'w')
+
+    # Write header
+    t = 1 if tag else 0
+    header = "#%s %s\n" % (len(contours),t)
+    fo.write(header)
+
     for contour in contours:
-        # Skip empty contour
-        if len(contour.contour)==0:
-            continue
         for p in contour.contour:
             fo.write("%s %s," % p)
         fo.write("\n")
+
+    if tag:
+        for contour in contours:
+            fo.write("%s\n" % contour.tag) 
+
     fo.close()
 
 # Remove overlapping contours based on score
@@ -361,6 +414,7 @@ def stitch(contour):
 
 # Dump the contours as label image
 # Useful for manual tagging later
+# Not to be confused with contour.tag
 def dump_label(filename,contours,size):
     imglabel = np.zeros(size,dtype=np.int32)
 
