@@ -19,31 +19,37 @@ DISTANCE_THRESHOLD = 7
 class Contour:
     def __init__(self,contour):
         self.contour = contour
-        self.length  = len(contour)
-
-        # Set the contour location and shape
-        px = [p[1] for p in contour]
-        py = [p[0] for p in contour]
-
-        self.x,self.y = np.min(px),np.min(py)
-        self.x2,self.y2 = np.max(px),np.max(py)
-
-        self.height = self.y2 - self.y + 1
-        self.width  = self.x2 - self.x + 1
+        self.length = len(contour)
+        self.calc_dimension()
 
         self.img = None
         self.area = 0
 
+        # Tracing related
         self.child = []
         self.parent = None
         self.score = 0
         self.flag = True
 
+        # Classification related
+        self.tag = 0
+        self.no  = None
+
+
+    def calc_dimension(self):
+        # Set the contour location and shape
+        px = [p[1] for p in self.contour]
+        py = [p[0] for p in self.contour]
+
+        self.x,self.y   = np.min(px),np.min(py)
+        self.x2,self.y2 = np.max(px),np.max(py)
+
+        self.height = self.y2 - self.y + 1
+        self.width  = self.x2 - self.x + 1
+        
         self.gy = np.mean(py)
         self.gx = np.mean(px)
 
-        self.tag = 0
-        self.no  = None
 
     # Create the binary image of enclosed contour
     def fill(self):
@@ -60,16 +66,8 @@ class Contour:
             if point not in newcontour:
                 newcontour.append(point)
         self.contour = newcontour
-        self.length  = len(newcontour)
-
-        self.gx,self.gy = self.gx/float(scale),self.gy/float(scale)
-        self.x,self.y = self.x/scale,self.y/scale
-        self.height = self.y2 - self.y + 1
-        self.width  = self.x2 - self.x + 1
-
+        self.calc_dimension()
         self.fill()
-
-        return
 
 # Function to trace contour on given grayscale image
 def trace(img,minlen=100,maxlen=700):
@@ -116,7 +114,17 @@ def load(filename):
             continue
         con = data.split(',')[:-1]
         con = [tuple(map(int,x.split())) for x in con]
+
+        """ remove duplicate points from contour
+        contrim = []
+        for point in con:
+            if point not in contrim:
+                contrim.append(point)
+        c = Contour(contrim)
+        """
+
         c = Contour(con)
+
         c.no = d
 
         if tagged:
