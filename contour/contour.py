@@ -43,6 +43,7 @@ class Contour:
         self.gx = np.mean(px)
 
         self.tag = 0
+        self.no  = None
 
     # Create the binary image of enclosed contour
     def fill(self):
@@ -116,6 +117,8 @@ def load(filename):
         con = data.split(',')[:-1]
         con = [tuple(map(int,x.split())) for x in con]
         c = Contour(con)
+        c.no = d
+
         if tagged:
             c.tag = tags[d]
         contours.append(c)
